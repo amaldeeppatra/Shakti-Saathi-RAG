@@ -4,3 +4,7 @@ uvicorn
 streamlit
 langchain
 llamaindex
+langchain_community
+langchain_openai
+wikipedia
+faiss-cpu

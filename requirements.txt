@@ -1,9 +1,7 @@
 openai
 fastapi
 uvicorn
-streamlit
 langchain
-llamaindex
 langchain_community
 langchain_openai
 wikipedia

@@ -1,4 +1,5 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic_models import QueryInput, QueryResponse, DocumentInfo, DeleteFileRequest
 from langchain_utils import get_rag_chain, get_rag_chain_odia
 from db_utils import insert_application_logs, get_chat_history, get_all_documents, insert_document_record, delete_document_record
@@ -6,8 +7,20 @@ from chroma_utils import index_document_to_chroma, delete_doc_from_chroma
 import os
 import uuid
 import logging
+import shutil
+
 logging.basicConfig(filename='app.log', level=logging.INFO)
+
 app = FastAPI()
+
+# Enable CORS for all origins
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow requests from all origins
+    allow_credentials=True,  # Allow cookies to be included
+    allow_methods=["*"],  # Allow all HTTP methods
+    allow_headers=["*"],  # Allow all headers
+)
 
 @app.post("/chat", response_model=QueryResponse)
 def chat(query_input: QueryInput):
@@ -15,8 +28,6 @@ def chat(query_input: QueryInput):
     logging.info(f"Session ID: {session_id}, User Query: {query_input.question}, Model: {query_input.model.value}")
     if not session_id:
         session_id = str(uuid.uuid4())
-
-    
 
     chat_history = get_chat_history(session_id)
     rag_chain = get_rag_chain(query_input.model.value)
@@ -30,13 +41,11 @@ def chat(query_input: QueryInput):
     return QueryResponse(answer=answer, session_id=session_id, model=query_input.model)
 
 @app.post("/chat/odia", response_model=QueryResponse)
-def chat(query_input: QueryInput):
+def chat_odia(query_input: QueryInput):
     session_id = query_input.session_id
     logging.info(f"Session ID: {session_id}, User Query: {query_input.question}, Model: {query_input.model.value}")
     if not session_id:
         session_id = str(uuid.uuid4())
-
-    
 
     chat_history = get_chat_history(session_id)
     rag_chain = get_rag_chain_odia(query_input.model.value)
@@ -48,10 +57,6 @@ def chat(query_input: QueryInput):
     insert_application_logs(session_id, query_input.question, answer, query_input.model.value)
     logging.info(f"Session ID: {session_id}, AI Response: {answer}")
     return QueryResponse(answer=answer, session_id=session_id, model=query_input.model)
-
-from fastapi import UploadFile, File, HTTPException
-import os
-import shutil
 
 @app.post("/upload-doc")
 def upload_and_index_document(file: UploadFile = File(...)):

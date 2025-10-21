@@ -16,3 +16,4 @@ langchain_chroma
 python-multipart
 fastapi
 uvicorn
+pydantic
